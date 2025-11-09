@@ -1,6 +1,8 @@
 from threading import Lock
 import sqlalchemy as sa
 from sqlalchemy.ext.declarative import declarative_base
+from core import get_database_url
+
 
 Base = declarative_base()
 
@@ -12,6 +14,7 @@ class Db():
     def __new__(cls, database="sqlite:///:memory:"):
         # Block other threads from creating a new object:
         with cls._lock():
+            database = get_database_url() if get_database_url() else database
             if cls not in cls._instances:
                 instance = super().__new__(cls)
                 cls._instances[cls] = instance
@@ -31,6 +34,6 @@ class Db():
     def __exit__(self, exc_type, exc_value, traceback):
         try:
             self.session.commit()
-        except:
+        except Exception as exception:
             self.session.rollback()
-        return
+            raise exception
